@@ -1,20 +1,71 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chapter 17 | CSP Practice Lab</title><style>
-:root{font-family:system-ui,Arial,sans-serif;color:#211b38;background:#f4f0fa}*{box-sizing:border-box}body{margin:0}header{background:#35205d;color:white;padding:22px max(18px,calc((100vw - 980px)/2));border-bottom:6px solid #e8ba45}h1{margin:4px 0;font-size:1.7rem}.sub{color:#e9dffa}.wrap{max-width:980px;margin:20px auto;padding:0 14px}.panel{background:white;border-radius:16px;padding:22px;box-shadow:0 5px 20px #35205d12;margin:15px 0}.tabs{display:flex;flex-wrap:wrap;gap:8px}.tabs button{border:1px solid #bba6d5;background:white;color:#392365;border-radius:9px;padding:12px;font-weight:700;cursor:pointer}.tabs button.active{background:#4d2b7d;color:white}.question{border-top:1px solid #e6dfef;padding:18px 0}.question:first-of-type{border:0}label.choice{display:block;padding:11px;margin:7px 0;border:1px solid #d6cce5;border-radius:9px;cursor:pointer}label.choice:has(input:checked){border-color:#6c3fa6;background:#f2eafd}input,select{accent-color:#693ba1}input[type=text],select{padding:11px;border:1px solid #aa9bbf;border-radius:8px;width:100%;max-width:350px}.button{background:#63379b;color:white;border:0;padding:12px 18px;border-radius:9px;font-weight:700;cursor:pointer;margin:6px 6px 6px 0}.button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#e7dff1;color:#35205d}.note{background:#fff8df;border-left:4px solid #d7a62e;padding:12px;border-radius:5px}.score{font-size:1.3rem;font-weight:800;color:#4d2b7d}.muted{color:#61566f}.hidden{display:none}footer{text-align:center;color:#71677e;padding:24px}</style></head><body><header><div class="sub">COMPUTER SCIENCE PRINCIPLES • PRACTICE LAB</div><h1>Chapter 17: Data Processing</h1><div class="sub">Four lessons • 16 questions • Two checks per lesson</div></header><main class="wrap"><section id="intro" class="panel"><h2>Student Information</h2><p>Enter your information before starting. Your work saves automatically on this device.</p><label>Student name<br><input id="student" type="text" placeholder="First and last name" autocomplete="name"></label><p><label>Class period<br><select id="period"><option value="">Select a period</option><option>1st Block</option><option>3rd Block</option><option>4th Block</option></select></label></p><button class="button" id="start">Start Practice Lab</button><p id="introError" class="muted"></p></section><section id="workspace" class="hidden"><div class="panel"><div class="tabs" id="tabs"></div><p class="muted" id="lessonStatus"></p></div><div class="panel"><h2 id="lessonTitle"></h2><div id="questions"></div><button class="button" id="check">Check Answers</button><button class="button secondary" id="resetLesson">Clear current selections</button><div id="feedback" aria-live="polite"></div></div><div class="panel"><h2>Results</h2><div id="results"></div><p class="note">Your best lesson scores are kept on this device. Check your answers before submitting your final score.</p><button class="button" id="submit">Submit Best Score to Grade Sheet</button><div id="submitFeedback" aria-live="polite"></div></div></section></main><footer>Chapter 17 • Understanding Data • Practice and review</footer><script>
-const APP={"chapter":17,"title":"Data Processing","lessons":[{"title":"Extracting Information from Data","questions":[{"q":"What is information?","options":["Facts and patterns found by analyzing data","Only numbers entered into a program","A computer's storage space"],"correct":0},{"q":"A correlation between two variables proves that one causes the other.","options":["True","False","Only when shown on a graph"],"correct":1},{"q":"What is metadata?","options":["A type of computer virus","Data about other data","A calculation error"],"correct":1},{"q":"Why combine information from several sources?","options":["To make conclusions more reliable","To guarantee that a correlation is a cause","To remove every possible bias"],"correct":0}]},{"title":"Data Processing Challenges","questions":[{"q":"What does cleaning data mean?","options":["Deleting all unusual answers","Making data uniform without changing its meaning","Changing answers to match a prediction"],"correct":1},{"q":"Which response is most likely to create messy age data?","options":["A numeric dropdown","A validated number field","A free-text field"],"correct":2},{"q":"A survey that includes different kinds of people in the population uses a ____ sample.","options":["representative","randomly biased","compressed"],"correct":0},{"q":"Which approach may help process a very large data set?","options":["Distributed computing","Removing every row","Avoiding algorithms"],"correct":0}]},{"title":"Using Programs with Data","questions":[{"q":"What is a spreadsheet cell?","options":["A box at the intersection of a row and column","A computer processor","A full sheet of paper"],"correct":0},{"q":"Which tool arranges values from largest to smallest?","options":["Filtering","Sorting","Searching"],"correct":1},{"q":"Which spreadsheet function adds a group of numbers?","options":["SUM","SORT","FIND"],"correct":0},{"q":"Which tool shows only rows that meet a condition?","options":["Filtering","Renaming","Printing"],"correct":0}]},{"title":"Data Compression","questions":[{"q":"Analog data usually changes ____.","options":["only in whole-number steps","smoothly and continuously","only as bits"],"correct":1},{"q":"Measuring an analog signal at regular intervals is called ____.","options":["sampling","sorting","crowdsourcing"],"correct":0},{"q":"Which compression preserves all the original information?","options":["Lossy","Lossless","Random"],"correct":1},{"q":"Which compression may remove details to reduce file size?","options":["Lossy","Lossless","Analog"],"correct":0}]}]};
-const ENDPOINT='https://script.google.com/a/macros/benhillschools.org/s/AKfycbz9IipEcz2wq8Hbye5zC3pyuXFCW9_4PlutdfW3oRwfKcTW5jMgV3FqxNYVWupvJ8kO/exec';
-const KEY='csp17-understanding-data-v1';
-let state;try{state=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){state={}}
-state.lessons=state.lessons||APP.lessons.map(()=>({attempts:0,best:0,answers:{}}));state.lesson=state.lesson||0;
-const el=id=>document.getElementById(id);const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
-function shuffle(array,seed){const a=array.slice();let s=seed;for(let i=a.length-1;i>0;i--){s=(Math.imul(s,1664525)+1013904223)>>>0;let j=s%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
-function optionsFor(li,qi){const q=APP.lessons[li].questions[qi];return shuffle(q.options.map((label,index)=>({label,index})),(li+1)*181+(qi+1)*719)}
-function start(){const name=el('student').value.trim(),period=el('period').value;if(!name||!period){el('introError').textContent='Please enter your name and select your class period.';return}state.name=name;state.period=period;save();el('intro').classList.add('hidden');el('workspace').classList.remove('hidden');render()}
-function render(){const li=state.lesson,l=APP.lessons[li],s=state.lessons[li];el('tabs').innerHTML='';APP.lessons.forEach((v,i)=>{let b=document.createElement('button');b.textContent='Lesson '+(i+1);b.className=i===li?'active':'';b.onclick=()=>{state.lesson=i;save();render()};el('tabs').appendChild(b)});el('lessonTitle').textContent='Lesson '+(li+1)+': '+l.title;el('lessonStatus').textContent='Checks used: '+s.attempts+' of 2 • Best: '+s.best+'/4';el('questions').innerHTML='';l.questions.forEach((q,qi)=>{const div=document.createElement('div');div.className='question';const heading=document.createElement('h3');heading.textContent=(qi+1)+'. '+q.q;div.appendChild(heading);optionsFor(li,qi).forEach(o=>{const label=document.createElement('label');label.className='choice';const input=document.createElement('input');input.type='radio';input.name='q'+qi;input.value=o.index;input.checked=Number(s.answers[qi])===o.index&&s.answers[qi]!==undefined;input.disabled=s.attempts>=2;input.onchange=()=>{s.answers[qi]=o.index;save()};label.append(input,document.createTextNode(' '+o.label));div.appendChild(label)});el('questions').appendChild(div)});el('check').disabled=s.attempts>=2;el('resetLesson').disabled=s.attempts>=2;el('feedback').innerHTML=s.attempts>=2?'<p class="note">Two checks completed. Review your best score in Results.</p>':'';renderResults()}
-function renderResults(){const earned=state.lessons.reduce((a,s)=>a+s.best,0),total=APP.lessons.length*4;el('results').innerHTML='<p class="score">Best overall score: '+earned+'/'+total+' ('+Math.round(100*earned/total)+'%)</p>'+state.lessons.map((s,i)=>'<p>Lesson '+(i+1)+': '+s.best+'/4 • '+s.attempts+'/2 checks</p>').join('')}
-el('check').onclick=()=>{const s=state.lessons[state.lesson],l=APP.lessons[state.lesson];if(Object.keys(s.answers).length<4){el('feedback').textContent='Answer all four questions before checking.';return}if(s.attempts>=2)return;let score=l.questions.reduce((n,q,i)=>n+(Number(s.answers[i])===q.correct?1:0),0);s.attempts++;s.best=Math.max(s.best,score);save();render();el('feedback').innerHTML='<p class="note">This check: <b>'+score+'/4</b>. Best: <b>'+s.best+'/4</b>. '+(s.attempts<2?'You may revise answers and check once more.':'You have used both checks.')+'</p>'};
-el('resetLesson').onclick=()=>{state.lessons[state.lesson].answers={};save();render()};
-el('start').onclick=start;
-el('student').value=state.name||'';el('period').value=state.period||'';
-if(state.name&&state.period){el('intro').classList.add('hidden');el('workspace').classList.remove('hidden');render()}
-el('submit').onclick=async()=>{const score=Math.round(100*state.lessons.reduce((n,s)=>n+s.best,0)/16);if(state.lessons.some(s=>s.attempts===0)){el('submitFeedback').textContent='Complete at least one check in each lesson before submitting.';return}if(!confirm('Submit '+state.name+' — '+score+'% to the grade sheet?'))return;const data={studentName:state.name,name:state.name,student:state.name,period:state.period,classPeriod:state.period,practiceLab:'Chapter 17 - Data Processing',lab:'Chapter 17 - Data Processing',score:score};el('submitFeedback').textContent='Sending grade…';try{await fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});el('submitFeedback').textContent='Submission sent. Because the grade service does not return a readable confirmation, please verify the grade in the Google Sheet.'}catch(err){el('submitFeedback').textContent='Submission could not be sent. Check your connection and try again.'}};
-</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chapter 17 Practice — Data Processing</title>
+  <link rel="stylesheet" href="style.css?v=17" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">COMPUTER SCIENCE FOUNDATIONS</p>
+      <h1>Chapter 17: Data Processing</h1>
+      <p class="subtitle">Interactive Practice Lab</p>
+    </div>
+    <div class="progress-card" id="labProgress" hidden>
+      <span id="progressText">Lesson 1 of 3</span>
+      <div class="progress-track"><div id="progressBar"></div></div>
+    </div>
+  </header>
+
+  <section id="studentScreen" class="student-screen"><div class="student-card"><h2>✦ Student Information</h2><div class="student-inside"><p>Enter your first name, last name, and class period. Then click <strong>Begin Practice Lab</strong>.</p><form id="studentForm"><div class="student-fields"><div><label for="studentFirst">First Name</label><input id="studentFirst" placeholder="First Name" required autocomplete="given-name"></div><div><label for="studentLast">Last Name</label><input id="studentLast" placeholder="Last Name" required autocomplete="family-name"></div><div><label for="studentPeriod">Class Period</label><select id="studentPeriod" required><option value="">Choose a class period</option><option>1st Block</option><option>2nd Block</option><option>3rd Block</option><option>4th Block</option></select></div></div><button class="begin-button" type="submit">Begin Practice Lab</button><p id="studentError" role="alert"></p></form><p class="student-note">Complete each lesson and check your answers as you go.</p></div></div></section><main id="labContent" hidden>
+    <section class="intro card">
+      <h2>How this practice works</h2>
+      <p>Work through one lesson at a time. Answer the questions, complete the short Python coding scenario, then click <b>Check My Code</b>. Review anything you missed before clicking <b>Next Lesson</b>.</p>
+      <div class="lesson-tabs" id="lessonTabs"></div><p id="labLoadError" role="alert" hidden style="color:#9b2929;font-weight:700"></p>
+    </section>
+
+    <section id="lessonView"></section>
+
+    <section id="finishCard" class="card finish hidden">
+      <h2>Chapter 17 Results</h2>
+      <p>You completed all four Chapter 17 lessons and their coding challenges. Review your scores below.</p>
+      <p class="score-line" id="finalScore"></p><p id="resultsMessage"></p><div id="resultsBreakdown"></div><p id="submissionStatus" role="status">Submit your grade after all four lessons; verify your result in the grade checker.</p><button id="backToLabBtn" class="secondary" type="button">Back to Lab</button> <button id="submitResultsBtn" class="primary" type="button">Submit Results</button> 
+      <button id="resetBtn" class="secondary">Reset Answers</button>
+    </section>
+  </main>
+
+  <script>
+window.addEventListener('error',function(e){
+ const node=document.getElementById('labLoadError');
+ if(node){node.hidden=false;node.textContent='Lesson loading error: '+(e.message||'Script could not load')+' — please send this message to your teacher.';}
+});
+</script>
+<script src="script.js?v=17" onerror="document.getElementById('labLoadError').hidden=false;document.getElementById('labLoadError').textContent='The lesson script failed to download. Check the network or try reloading.';"></script>
+<script>
+(function(){
+const key='csp17-student-info';
+const first=document.getElementById('studentFirst'),last=document.getElementById('studentLast'),period=document.getElementById('studentPeriod');
+try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v){first.value=v.first||'';last.value=v.last||'';period.value=v.period||''}}catch(e){}
+document.getElementById('studentForm').addEventListener('submit',function(e){
+e.preventDefault();const v={first:first.value.trim(),last:last.value.trim(),period:period.value};
+if(!v.first||!v.last||!v.period){document.getElementById('studentError').textContent='Please complete all three fields.';return;}
+localStorage.setItem(key,JSON.stringify(v));
+sessionStorage.setItem('csp17-lab-started','1');
+document.getElementById('studentScreen').hidden=true;
+document.getElementById('labContent').hidden=false;
+document.getElementById('labProgress').hidden=false;
+window.scrollTo(0,0);
+});
+try{
+ const saved=JSON.parse(localStorage.getItem(key)||'null');
+ if(sessionStorage.getItem('csp17-lab-started')==='1'&&saved?.first&&saved?.last&&saved?.period){
+  document.getElementById('studentScreen').hidden=true;
+  document.getElementById('labContent').hidden=false;
+  document.getElementById('labProgress').hidden=false;
+ }
+}catch(e){}
+})();
+</script></body>
+</html>
