@@ -137,8 +137,8 @@ try:
     for node in ast.walk(tree):
         if not isinstance(node,allowed):
             raise ValueError("Only variables, comparisons, if/elif/else, and print() are allowed in this activity.")
-        if isinstance(node,ast.Call) and not ((isinstance(node.func,ast.Name) and node.func.id=="print") or (isinstance(node.func,ast.Attribute) and node.func.attr=="strip" and isinstance(node.func.value,ast.Name))):
-            raise ValueError("Only print() and text.strip() calls are allowed in this activity.")
+        if isinstance(node,ast.Call) and not ((isinstance(node.func,ast.Name) and node.func.id in ("print","int","float","str","round")) or (isinstance(node.func,ast.Attribute) and node.func.attr=="strip" and isinstance(node.func.value,ast.Name))):
+            raise ValueError("Only print(), int(), float(), str(), round(), and text.strip() calls are allowed in this activity.")
     for test in tests:
         class SetValues(ast.NodeTransformer):
             def visit_Assign(self,node):
@@ -150,7 +150,7 @@ try:
         test_tree=SetValues().visit(ast.parse(source))
         ast.fix_missing_locations(test_tree)
         output=io.StringIO()
-        scope={"__builtins__":{"print":print}}
+        scope={"__builtins__":{"print":print,"int":int,"float":float,"str":str,"round":round}}
         with contextlib.redirect_stdout(output):
             exec(compile(test_tree,"<student>","exec"),scope,scope)
         actual=output.getvalue().strip()
