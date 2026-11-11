@@ -130,15 +130,15 @@ allowed = (ast.Module,ast.Assign,ast.Name,ast.Store,ast.Load,ast.Constant,ast.Ex
            ast.Call,ast.Compare,ast.Gt,ast.GtE,ast.Lt,ast.LtE,ast.Eq,ast.NotEq,
            ast.If,ast.BoolOp,ast.And,ast.Or,ast.Not,ast.UnaryOp,ast.USub,
            ast.BinOp,ast.Add,ast.Sub,ast.Mult,ast.Div,ast.Mod,ast.Tuple,
-           ast.List,ast.Pass)
+           ast.List,ast.Pass,ast.Attribute)
 result = {"runs": [], "error": ""}
 try:
     tree = ast.parse(source)
     for node in ast.walk(tree):
         if not isinstance(node,allowed):
             raise ValueError("Only variables, comparisons, if/elif/else, and print() are allowed in this activity.")
-        if isinstance(node,ast.Call) and (not isinstance(node.func,ast.Name) or node.func.id!="print"):
-            raise ValueError("Only print() function calls are allowed in this activity.")
+        if isinstance(node,ast.Call) and not ((isinstance(node.func,ast.Name) and node.func.id=="print") or (isinstance(node.func,ast.Attribute) and node.func.attr=="strip" and isinstance(node.func.value,ast.Name))):
+            raise ValueError("Only print() and text.strip() calls are allowed in this activity.")
     for test in tests:
         class SetValues(ast.NodeTransformer):
             def visit_Assign(self,node):
